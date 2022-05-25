@@ -1,0 +1,56 @@
+stages:
+  - gambi
+  - build
+  - deploy
+before_script:
+  - whoami
+  - export LDFLAGS="-L/usr/local/opt/ruby/lib"
+  - export CPPFLAGS="-I/usr/local/opt/ruby/include"
+  - export FLUTTER_ROOT="/Users/dudu/flutter"
+  - export PATH="$PATH:/Users/dudu/flutter/bin"
+  - echo "Checking the current flutter version..."
+  - flutter --version
+clear-caches:
+  only:
+    - none
+  tags:
+    - flutter
+  stage: gambi
+  script:
+    - rm -rf /Users/dudu/flutter/.pub-cache
+build-android-app:
+  stage: build
+  only:
+    - main
+  tags:
+    - flutter
+  script:
+    - echo "Running build for android"
+    - export ANDROID_HOME=/Users/dudu/android/sdk
+    - export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk1.8.0_301.jdk/Contents/Home"
+    - cd dev_training_project
+    - pwd
+    - flutter clean
+    - flutter pub get
+    - cd android
+    - flutter precache
+    - flutter build apk --flavor dev --release
+    - echo $CI_PROJECT_DIR
+    - ls -la $CI_PROJECT_DIR
+    - cd ..
+    - pwd
+    - ls -la
+  artifacts:
+    paths:
+    - dev_training_project/build/app/outputs/flutter-apk/app-dev-release.apk
+deploy-android-app:
+  when: manual
+  needs: ["build-android-app"]
+  stage: deploy
+  only:
+    - main
+  tags:
+    - flutter
+  script:
+    - echo "Running deploy for android"
+    - firebase appdistribution:distribute dev_training_project/build/app/outputs/flutter-apk/app-dev-release.apk --app 1:92845827744:android:7c6b602a32ff34edbc0bc5 --release-notes "Release" --groups "dev-training"

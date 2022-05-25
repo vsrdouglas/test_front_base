@@ -1,0 +1,3 @@
+chromedriver --port=4444
+
+flutter driver --flavor dev --driver test/test_driver/app.dart --target test/integration_test/app_test.dart
